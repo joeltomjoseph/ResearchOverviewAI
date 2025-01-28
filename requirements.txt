@@ -1,0 +1,7 @@
+streamlit>=1.28.0
+ollama>=0.1.14
+pymupdf>=1.23.8
+chromadb>=0.4.15
+arxiv>=2.1.0
+python-dotenv>=1.0.0
+pydantic>=2.10.0

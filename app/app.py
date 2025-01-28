@@ -1,11 +1,20 @@
 import streamlit as st
 import arxiv
 
+import processPaper
+
 st.set_page_config(page_title="Research Paper Overview with AI", page_icon="🧐")
 st.title("Research Paper Overview with AI")
 
 # Sidebar Navigation
 menu = st.sidebar.selectbox("Menu", ["Upload Papers", "Search Papers", "Scrape Papers"])
+
+# Select LLM Model to use
+selectedModel = st.sidebar.selectbox(
+    "Select LLM Model",
+    options = processPaper.getAvailableModels(),
+    index = 0
+)
 
 if menu == "Upload Papers":
     uploadedFile = st.file_uploader("Upload a PDF paper to Analyse", type="pdf")
