@@ -3,6 +3,8 @@ import chromadb
 import uuid
 import json
 
+import chromadb.utils.embedding_functions.ollama_embedding_function as ollama_ef
+
 def initDatabases():
     ''' Initialize the SQLite db for storing metadata and papers '''
     conn = sqlite3.connect("data/metadata.db")
@@ -20,17 +22,21 @@ def initDatabases():
     conn.commit()
     conn.close()
 
-chromaClient = chromadb.Client()
-collection = chromaClient.create_collection(name="papers", get_or_create=True)
+ollamaEF = ollama_ef.OllamaEmbeddingFunction(
+    url="http://localhost:11434/api/embeddings",
+    model_name="nomic-embed-text:latest",
+)
+chromaClient = chromadb.PersistentClient("./data/chroma")
+collection = chromaClient.get_or_create_collection("papers", embedding_function=ollamaEF)
 
 def storePaper(metadata: dict, embedding: list[list[float]]):
     ''' Stores the metadata and embedding of a paper in the SQLite and ChromaDB databases '''
     paperId = str(uuid.uuid4())
     
     # SQLite to store the metadata of paper
-    conn = sqlite3.connect('metadata.db')
+    conn = sqlite3.connect('data/metadata.db')
     c = conn.cursor()
-    c.execute('''INSERT INTO metadata VALUES (?,?,?,?,?,?,?,?)''', (
+    c.execute('''INSERT INTO metadata VALUES (?,?,?,?,?,?,?,?,?)''', (
         paperId,
         metadata.get('title', ''),
         # json.dumps(metadata.get('authors', [])),
@@ -39,7 +45,8 @@ def storePaper(metadata: dict, embedding: list[list[float]]):
         json.dumps(metadata.get('metrics', {})),
         json.dumps(metadata.get('methods', {})),
         json.dumps(metadata.get('applications', [])),
-        json.dumps(metadata.get('limitations', []))
+        json.dumps(metadata.get('limitations', [])),
+        json.dumps(metadata.get('areasOfImprovement', []))
     ))
     conn.commit()
     conn.close()
@@ -48,22 +55,23 @@ def storePaper(metadata: dict, embedding: list[list[float]]):
     collection.add(
         ids=paperId,
         embeddings=embedding,
-        # documents=metadata.get('summary', '')
+        # metadatas=metadata, # This might break
+        # documents=[metadata.get('summary', ''), metadata.get('title', '')]
     )
 
 def semanticSearch(query: str, nResults: int = 5) -> list[str]:
     ''' Searches for papers similar to the given query and returns their IDs '''
     try:
         results = collection.query(
-            query_texts=[query],
+            query_texts=query,
             n_results=nResults
         )
-        return results['ids']
+        return results['ids'][0]
     except Exception as e:
         raise Exception(f"Search failed: {str(e)}")
 
-def getPapersByIds(paperIds: list[int]) -> list[dict]:
-    conn = sqlite3.connect('metadata.db')
+def getPapersByIds(paperIds: list[str]) -> list[dict]:
+    conn = sqlite3.connect('data/metadata.db')
     c = conn.cursor()
     placeholders = ','.join(['?']*len(paperIds))
     c.execute(f"SELECT * FROM metadata WHERE id IN ({placeholders})", paperIds)
