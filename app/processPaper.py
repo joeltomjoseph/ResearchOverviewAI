@@ -29,7 +29,7 @@ class Metadata(pydantic.BaseModel):
     limitations: list[str]
     areasOfImprovement: list[str]
 
-def getAvailableModels() -> list:
+def getAvailableModels() -> list[str]:
     ''' Gets the list of available model names from the Ollama API '''
     try:
         return [model.model for model in ollama.list().models]
@@ -63,7 +63,7 @@ def generateEmbedding(text: str, modelName: str) -> list[list[float]]:
     except Exception as e:
         raise Exception(f"Embedding generation failed: {str(e)}")
     
-def generateEmbedding(docs: list[Document], metadata: list[dict], model: str):
+def generateEmbedding(docs: list[Document], metadata: list[dict], model: str) -> list[list[float]]:
     ''' Generates embeddings for the given documents using the specified model '''
     try:
         response = ollama.embed(model=model, input=[doc.page_content for doc in docs])

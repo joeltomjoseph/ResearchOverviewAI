@@ -25,7 +25,7 @@ def initDatabases():
     conn.commit()
     conn.close()
 
-ollamaEF = ollama_ef.OllamaEmbeddingFunction(
+ollamaEF = ollama_ef.OllamaEmbeddingFunction( # Custom embedding function that uses Ollama
     url="http://localhost:11434/api/embeddings",
     model_name="nomic-embed-text:latest",
 )
@@ -33,7 +33,7 @@ chromaClient = chromadb.PersistentClient("./data/chroma")
 collection = chromaClient.get_or_create_collection("papers", embedding_function=ollamaEF)
 
 def storePaper(metadata: dict, documents: list[Document]):
-    ''' Stores the metadata and embedding of a paper in the SQLite and ChromaDB databases '''
+    ''' Stores the metadata in the SQLite and embeds documents (chunked parts of a paper) into ChromaDB '''
     paperId = str(uuid.uuid4())
     
     # SQLite to store the metadata of paper
@@ -78,6 +78,7 @@ def semanticSearch(query: str, nResults: int = 5) -> list[str]:
         raise Exception(f"Search failed: {str(e)}")
 
 def getPapersByIds(paperIds: list[str]) -> list[dict]:
+    ''' Gets the papers with the given IDs from the SQLite database '''
     conn = sqlite3.connect('data/metadata.db')
     c = conn.cursor()
     placeholders = ','.join(['?']*len(paperIds))
@@ -99,3 +100,47 @@ def getPapersByIds(paperIds: list[str]) -> list[dict]:
             "areasOfImprovement": json.loads(row[10])
         })
     return papers
+
+def getAllPapers() -> list[dict]:
+    ''' Gets all papers stored in the SQLite database '''
+    conn = sqlite3.connect('data/metadata.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM metadata")
+
+    papers = []
+    for row in c.fetchall():
+        papers.append({
+            "id": row[0],
+            "title": row[1],
+            "summary": row[2],
+            "authors": json.loads(row[3]),
+            "link": row[4],
+            "datasets": json.loads(row[5]),
+            "metrics": json.loads(row[6]),
+            "methods": json.loads(row[7]),
+            "applications": json.loads(row[8]),
+            "limitations": json.loads(row[9]),
+            "areasOfImprovement": json.loads(row[10])
+        })
+    return papers
+
+def removePaper(paperId: str):
+    ''' Removes a given paper from the SQLite and ChromaDB databases '''
+    conn = sqlite3.connect('data/metadata.db')
+    c = conn.cursor()
+    c.execute("DELETE FROM metadata WHERE id=?", (paperId,))
+    conn.commit()
+    conn.close()
+
+    collection.delete(where={"paperId": paperId}) # Remove all documents associated with the paper
+
+def removeAllPapers():
+    ''' Removes all papers from the SQLite and ChromaDB databases '''
+    conn = sqlite3.connect('data/metadata.db')
+    c = conn.cursor()
+    c.execute("DELETE FROM metadata")
+    conn.commit()
+    conn.close()
+
+    chromaClient.delete_collection("papers") # Remove the entire collection
+    chromaClient.get_or_create_collection("papers", embedding_function=ollamaEF) # Recreate the collection
