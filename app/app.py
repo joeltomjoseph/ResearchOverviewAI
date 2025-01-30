@@ -3,17 +3,17 @@ import arxiv
 import os
 
 from database import initDatabases, storePaper, semanticSearch, getPapersByIds
-from extractText import extractText
+from extractText import extractText, chunkDocument
 from processPaper import generateMetadata, generateEmbedding, getAvailableModels
 
 st.set_page_config(page_title="Research Paper Overview with AI", page_icon="🧐")
-st.title("Research Paper Overview with AI")
+st.title("Research Paper Overview with AI 🧐")
 
 # Init Databases
 initDatabases()
 
 # Sidebar Navigation
-menu = st.sidebar.selectbox("**Menu**", ["Upload Papers", "Search Papers", "Scrape Papers"], index=0)
+menu = st.sidebar.selectbox("**Menu**", ["Upload Papers", "Scrape Papers", "Search Papers"], index=0)
 
 # Select LLM Model to use
 selectedGenModel = st.sidebar.selectbox(
@@ -29,33 +29,38 @@ selectedEmbedModel = st.sidebar.selectbox(
 )
 
 if menu == "Upload Papers":
-    uploadedFile = st.file_uploader("Upload a PDF paper to Analyse", type="pdf")
+    st.header("Upload Papers")
+    uploadedFiles = st.file_uploader("Upload one or more PDF papers to Analyse", type="pdf", accept_multiple_files=True)
     
-    if uploadedFile:
-        with st.status("Processing paper...", expanded=True):
-            st.write("Copying the uploaded file to the server...")
+    if uploadedFiles:
+        with st.status("Processing paper(s)...", expanded=True):
+            for uploadedFile in uploadedFiles:
+                st.write("Copying the uploaded file to the server...")
 
-            tempPath = f"./data/temp/{uploadedFile.name}"
-            os.makedirs("./data/temp", exist_ok=True)
-            with open(tempPath, "wb") as f:
-                f.write(uploadedFile.getbuffer()) # Copy the uploaded file to the folder
-            
-            st.write("Extracting text from the PDF...")
-            text = extractText(tempPath)
-            
-            st.write(f"Generating metadata with **{selectedGenModel}**...")
-            metadata = generateMetadata(text, selectedGenModel)
+                tempPath = f"./data/temp/{uploadedFile.name}"
+                os.makedirs("./data/temp", exist_ok=True)
+                with open(tempPath, "wb") as f:
+                    f.write(uploadedFile.getbuffer()) # Copy the uploaded file to the folder
+                
+                st.write(f"Extracting text from *{uploadedFile.name}*...")
+                text = extractText(tempPath)
+                document = chunkDocument(tempPath) # Chunk the document into smaller parts
+                
+                st.write(f"Generating metadata with **{selectedGenModel}**...")
+                metadata = generateMetadata(text, selectedGenModel)
 
-            st.write(f"Generating embedding with **{selectedEmbedModel}**...")
-            embedding = generateEmbedding(text, selectedEmbedModel)
+                st.write(f"Generating embedding with **{selectedEmbedModel}**...")
+                # embedding = generateEmbedding(text, selectedEmbedModel)
 
-            st.write("Storing the paper in the database...")
-            storePaper(metadata, embedding)
+                st.write("Storing the paper in the database...")
+                # storePaper(metadata, embedding)
+                storePaper(metadata, document)
 
-            st.success("**Paper processed successfully!**")
-            st.write(metadata) # Display the metadata generated
+                st.success(f"**Paper *({uploadedFile.name})* processed successfully!**")
+                st.write(metadata) # Display the metadata generated
 
-            os.remove(tempPath) # Remove the temporary file
+                os.remove(tempPath) # Remove the temporary file
+                st.divider()
 
 elif menu == "Scrape Papers":
     st.header("arXiv Paper Scraper")
@@ -67,7 +72,7 @@ elif menu == "Scrape Papers":
     if st.button("Fetch Papers"):
         with st.status("Fetching papers...", expanded=True):
             client = arxiv.Client() # Create client
-            search = arxiv.Search(keyword, max_results=maxResults, sort_by=arxiv.SortCriterion.SubmittedDate)
+            search = arxiv.Search(keyword, max_results=maxResults)
             papers = client.results(search)
 
             st.write("Processing papers...")
@@ -80,8 +85,8 @@ elif menu == "Scrape Papers":
                 metadata = generateMetadata(text, selectedGenModel)
                 st.write(f"Generating embedding with **{selectedEmbedModel}**...")
                 embedding = generateEmbedding(text, selectedEmbedModel)
-                # metadata["authors"] = [a.name for a in paper.authors] TODO: Need to find a way to make this consistent between scraped and uploaded papers
-                # metadata["published"] = str(paper.published)
+                metadata["authors"] = [a.name for a in paper.authors] # TODO: Need to find a way to make this consistent between scraped and uploaded papers
+                metadata["link"] = "https://arxiv.org/abs/" + paper.get_short_id()
 
                 st.write(f"Storing in the database...")
                 storePaper(metadata, embedding)
