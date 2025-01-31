@@ -23,13 +23,20 @@ A tool to automate research paper processing in order to generate standardised *
     ollama pull nomic-embed-text:latest
     ```
     > Note: `nomic-embed-text:latest` is used for embedding
+
     > Note: If you have a beefy GPU, please try using more demanding models such as `deepseek-r1:14b` or `deepseek-r1:32b`
 3. Create a virtual environment:
     > Note: This is optional but recommended
 
+    > MacOS/Linux:
     ```bash
     python -m venv .venv
     source .venv/bin/activate
+    ```
+    > Windows:
+    ```bash
+    python -m venv .venv
+    .venv\Scripts\activate
     ```
 4. Install app requirements:
     ```bash
@@ -39,7 +46,7 @@ A tool to automate research paper processing in order to generate standardised *
     > Note: Make sure you are in the same directory as the project
 
     ```bash
-    streamlit run .app/app.py
+    streamlit run app/app.py
     ```
 
 ## Acknowledgements

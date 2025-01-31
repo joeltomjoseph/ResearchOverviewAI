@@ -94,7 +94,7 @@ def paperInfoCard(paper: dict):
             if col2.button("Delete Paper from Database", key=paper["id"]+"delete", use_container_width=True):
                 removePaperDialog(paper["id"])
 
-            st.subheader(f"**{paper["title"]}**")
+            st.subheader(f"**{paper['title']}**")
             st.caption(f"**Authors**: {', '.join(paper['authors'])}")
             st.write(paper["summary"])
             st.write(f"**Link**: [{paper['link']}]({paper['link']})")
