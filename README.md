@@ -23,7 +23,7 @@ A tool to automate research paper processing in order to generate standardised *
     ollama pull nomic-embed-text:latest
     ```
     > Note: `nomic-embed-text:latest` is used for embedding
-    > If you have a beefy GPU, please try using more demanding models such as `deepseek-r1:14b` or `deepseek-r1:32b`
+    > Note: If you have a beefy GPU, please try using more demanding models such as `deepseek-r1:14b` or `deepseek-r1:32b`
 3. Create a virtual environment:
     > Note: This is optional but recommended
 

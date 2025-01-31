@@ -62,7 +62,7 @@ def storePaper(metadata: dict, documents: list[Document]):
 
     collection.add(
         ids=[f"{paperId}_{i}" for i in range(len(documents))],
-        documents=[doc.page_content for doc in documents],
+        documents=[doc.page_content for doc in documents], # These docs will be embedded with the Embedding Function specified in the collection
         metadatas=documentMetadata,
     )
 
@@ -144,3 +144,23 @@ def removeAllPapers():
 
     chromaClient.delete_collection("papers") # Remove the entire collection
     chromaClient.get_or_create_collection("papers", embedding_function=ollamaEF) # Recreate the collection
+
+def updatePaper(paperId: str, metadata: dict):
+    ''' Updates the metadata of specfic paper in the SQLite database '''
+    conn = sqlite3.connect('data/metadata.db')
+    c = conn.cursor()
+    c.execute('''UPDATE metadata SET title=?, summary=?, authors=?, link=?, datasets=?, metrics=?, methods=?, applications=?, limitations=?, areasOfImprovement=? WHERE id=?''', (
+        metadata.get('title', ''),
+        metadata.get('summary', ''),
+        json.dumps(metadata.get('authors', [])),
+        metadata.get('link', ''),
+        json.dumps(metadata.get('datasets', {})),
+        json.dumps(metadata.get('metrics', {})),
+        json.dumps(metadata.get('methods', {})),
+        json.dumps(metadata.get('applications', [])),
+        json.dumps(metadata.get('limitations', [])),
+        json.dumps(metadata.get('areasOfImprovement', [])),
+        paperId
+    ))
+    conn.commit()
+    conn.close()

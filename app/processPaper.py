@@ -33,8 +33,8 @@ def getAvailableModels() -> list[str]:
     ''' Gets the list of available model names from the Ollama API '''
     try:
         return [model.model for model in ollama.list().models]
-    except:
-        return ["llama3.1:8b"]  # Fallback TODO: change to error?
+    except Exception as e:
+        raise Exception(f"Error getting available models (Make sure Ollama is running): {str(e)}")
 
 def generateMetadata(text: str, modelName: str) -> dict:
     ''' Generates metadata from the given text using the specified model and returns it as a dictionary (JSON)'''
@@ -43,7 +43,7 @@ def generateMetadata(text: str, modelName: str) -> dict:
             model = modelName,
             format=Metadata.model_json_schema(), # Format the response as a JSON schema from the Metadata model
             options={"num_ctx": 4096, "temperature": 0}, # Increase the context size and lower temp
-            system="You are a research assistant that has been tasked with generating structured metadata for a research paper.",
+            system="You are a research assistant that has been tasked with generating structured metadata for a research paper. Retry if the output is incomplete or inaccurate or failed.",
             prompt=f"""
                 PROMPT: Generate metadata for the following research paper in JSON format. 
                 Use exact extracts/sections/titles/names where possible. 
@@ -53,7 +53,7 @@ def generateMetadata(text: str, modelName: str) -> dict:
         )
         return json.loads(response.response)
     except Exception as e:
-        return {"error": f"Metadata generation failed: {str(e)}"}
+        raise Exception(f"Metadata generation failed: {str(e)}")
 
 def generateEmbedding(text: str, modelName: str) -> list[list[float]]:
     ''' Generates a vector embedding for the given text using the specified model '''
