@@ -72,6 +72,17 @@ A tool to automate research paper processing in order to generate standardised *
     streamlit run app/app.py
     ```
 
+## Installation (QLab Machine)
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+streamlit run app/app.py
+```
+
 ## Acknowledgements
 - [Ollama](https://ollama.com) - providing the models and the hosting stuff
 - [arXiv](https://arxiv.org) - Thank you to arXiv for use of its open access interoperability. And for the papers.
