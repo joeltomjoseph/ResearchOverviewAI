@@ -256,7 +256,6 @@ def semanticSearch(query: str, nResults: int = 5) -> list[str]:
         
         return paper_ids
 
-# Rest of the functions remain unchanged
 def getPaperById(paperId: str) -> dict:
     ''' Gets a single paper by ID from the SQLite database '''
     conn = sqlite3.connect('data/metadata.db')
@@ -306,6 +305,33 @@ def getPapersByIds(paperIds: list[str]) -> list[dict]:
             "areasOfImprovement": json.loads(row[10])
         })
     return papers
+
+def getPaperByTitle(title: str) -> dict:
+    ''' Gets a single paper by title from the SQLite database '''
+    conn = sqlite3.connect('data/metadata.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM metadata WHERE title=?", (title,))
+    row = c.fetchone()
+    
+    if not row:
+        conn.close()
+        return None
+        
+    paper = {
+        "id": row[0],
+        "title": row[1],
+        "summary": row[2],
+        "authors": json.loads(row[3]),
+        "link": row[4],
+        "datasets": json.loads(row[5]),
+        "metrics": json.loads(row[6]),
+        "methods": json.loads(row[7]),
+        "applications": json.loads(row[8]),
+        "limitations": json.loads(row[9]),
+        "areasOfImprovement": json.loads(row[10])
+    }
+    conn.close()
+    return paper
 
 def getAllPapers() -> list[dict]:
     ''' Gets all papers stored in the SQLite database '''

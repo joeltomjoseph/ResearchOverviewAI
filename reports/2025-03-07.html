@@ -1,0 +1,359 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Research Overview Report</title>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+            <style>
+                body {
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    margin: 0;
+                    padding: 20px;
+                    color: #333;
+                }
+                .container {
+                    max-width: 1200px;
+                    margin: 0 auto;
+                }
+                h1, h2, h3 {
+                    color: #2C3E50;
+                }
+                .card {
+                    background-color: #f9f9f9;
+                    border-radius: 8px;
+                    padding: 20px;
+                    margin-bottom: 20px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                }
+                .stats {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 20px;
+                    margin-bottom: 30px;
+                }
+                .stat-card {
+                    background-color: #fff;
+                    border-radius: 8px;
+                    padding: 20px;
+                    min-width: 200px;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    flex: 1;
+                }
+                .stat-card h3 {
+                    margin-top: 0;
+                    color: #3498DB;
+                }
+                .stat-value {
+                    font-size: 32px;
+                    font-weight: bold;
+                    margin: 10px 0;
+                }
+                .chart {
+                    width: 100%;
+                    height: 400px;
+                    margin-bottom: 30px;
+                }
+                .paper-card {
+                    background-color: #fff;
+                    border-left: 4px solid #3498DB;
+                    padding: 15px;
+                    margin-bottom: 15px;
+                }
+                .paper-title {
+                    margin-top: 0;
+                    color: #2C3E50;
+                }
+                .metadata {
+                    color: #7f8c8d;
+                    font-size: 14px;
+                    margin-bottom: 10px;
+                }
+                footer {
+                    margin-top: 50px;
+                    text-align: center;
+                    color: #7f8c8d;
+                    font-size: 14px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>Research Overview Report</h1>
+                <p>Generated on 2025-03-07 13:06:42</p>
+                
+                <div class="card">
+                    <h2>Summary Statistics</h2>
+                    <div class="stats">
+                        <div class="stat-card">
+                            <h3>Total Papers</h3>
+                            <div class="stat-value">20</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Research Fields</h3>
+                            <div class="stat-value">5</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h2>Research Field Distribution</h2>
+                    <div id="fieldChart" class="chart"></div>
+                </div>
+        
+                <div class="card">
+                    <h2>Education</h2>
+                    <p>1 papers in this field</p>
+                    
+                    <h3>Subfields</h3>
+                    <div id="subfield_Education" class="chart"></div>
+                    
+                    <h3>Recent Papers in Education</h3>
+            
+                    <div class="paper-card">
+                        <h3 class="paper-title">Low progress math in a high performing system</h3>
+                        <div class="metadata">Authors: A. Jamaludin, A. I. Jabir, F. J. Wang, A. L. Tan</div>
+                        <p>This paper investigates the relationship between math anxiety and students' performance in mathematics, particularly focusing on how different types of math anxiety (e.g., cognitive, affective) influence academic outcomes. The study employs a mixed-methods approach, combining quantitative surveys wi...</p>
+                    </div>
+                
+                </div>
+            
+                <div class="card">
+                    <h2>Mathematics</h2>
+                    <p>5 papers in this field</p>
+                    
+                    <h3>Subfields</h3>
+                    <div id="subfield_Mathematics" class="chart"></div>
+                    
+                    <h3>Recent Papers in Mathematics</h3>
+            
+                    <div class="paper-card">
+                        <h3 class="paper-title">Quantitative Measure of Stability in Gene Regulatory Networks</h3>
+                        <div class="metadata">Authors: P. Ao</div>
+                        <p>A quantitative measure of stability in stochastic dynamics is introduced as a potential function, drawing parallels with the adaptive and developmental landscapes proposed by S. Wright and C.H. Waddington. The paper discusses recent experimental work on artificial gene networks and their application...</p>
+                    </div>
+                
+                    <div class="paper-card">
+                        <h3 class="paper-title">A new stochastic differential equation modelling incidence and prevalence with an application to systemic lupus erythematosus in England and Wales, 1995</h3>
+                        <div class="metadata">Authors: Ralph Brinks</div>
+                        <p>The paper presents a stochastic differential equation model to estimate the prevalence of Systemic Lupus Erythematosus (SLE). The model incorporates both deterministic and stochastic components, allowing for a more realistic representation of disease dynamics. Key findings include the estimation of ...</p>
+                    </div>
+                
+                    <div class="paper-card">
+                        <h3 class="paper-title">Quantitative uniqueness of solutions to parabolic equations</h3>
+                        <div class="metadata">Authors: Jiuyi Zhu</div>
+                        <p>In this paper, we establish quantitative uniqueness properties for solutions to second order elliptic equations with singular lower order terms. The main results include doubling inequalities and three-cylinder inequalities with optimal exponents that depend on the norms of the potentials. These est...</p>
+                    </div>
+                
+                </div>
+            
+                <div class="card">
+                    <h2>Uncategorized</h2>
+                    <p>6 papers in this field</p>
+                    
+                    <h3>Subfields</h3>
+                    <div id="subfield_Uncategorized" class="chart"></div>
+                    
+                    <h3>Recent Papers in Uncategorized</h3>
+            
+                    <div class="paper-card">
+                        <h3 class="paper-title">Explainable AI Insights for Symbolic Computation: A case study on selecting the variable ordering for cylindrical algebraic decomposition</h3>
+                        <div class="metadata">Authors: Lynn Pickering, Tereso Del Rio Almajano, Matthew England, Kelly Cohen</div>
+                        <p>We present a machine learning approach to select the variable ordering for Cylindrical Algebraic Decomposition (CAD), an algorithm used in computational algebra and geometry. The selection of the variable ordering significantly impacts the efficiency of CAD, which is known for its high computational...</p>
+                    </div>
+                
+                    <div class="paper-card">
+                        <h3 class="paper-title">AC2C: Adaptively Controlled Two-Hop Communication for Multi-Agent Reinforcement Learning</h3>
+                        <div class="metadata">Authors: Xuefeng Wang, Xinran Li, Jiawei Shao, Jun Zhang</div>
+                        <p>The answer is provided in the text above....</p>
+                    </div>
+                
+                    <div class="paper-card">
+                        <h3 class="paper-title">Adapting Computer Vision Algorithms for Omnidirectional Video</h3>
+                        <div class="metadata">Authors: Hannes Fassold</div>
+                        <p>This is a prompt to generate structured metadata for a research paper, including sections like title, content, keywords, etc. The user wants the output to be accurate and complete, possibly with exact extracts from the paper....</p>
+                    </div>
+                
+                </div>
+            
+                <div class="card">
+                    <h2>Computer Science</h2>
+                    <p>4 papers in this field</p>
+                    
+                    <h3>Subfields</h3>
+                    <div id="subfield_Computer_Science" class="chart"></div>
+                    
+                    <h3>Recent Papers in Computer Science</h3>
+            
+                    <div class="paper-card">
+                        <h3 class="paper-title">Discrimination between Arabic and Latin from bilingual documents</h3>
+                        <div class="metadata">Authors: Sofiene Haboubi, Samia Maddouri, Hamid Amiri</div>
+                        <p>The paper presents a method for distinguishing between Arabic and Latin texts using structural features and neural networks. The approach involves preprocessing steps like removing diacritical marks, extracting lines and words, and identifying structural characteristics such as the number of occurre...</p>
+                    </div>
+                
+                    <div class="paper-card">
+                        <h3 class="paper-title">AC2C: Adaptively Controlled Two-Hop Communication for Multi-Agent Reinforcement Learning</h3>
+                        <div class="metadata">Authors: Xuefeng Wang, Xinran Li, Jiawei Shao, Jun Zhang</div>
+                        <p>The answer is provided in the text above....</p>
+                    </div>
+                
+                    <div class="paper-card">
+                        <h3 class="paper-title">Adapting Computer Vision Algorithms for Omnidirectional Video</h3>
+                        <div class="metadata">Authors: Hannes Fassold</div>
+                        <p>This is a prompt to generate structured metadata for a research paper, including sections like title, content, keywords, etc. The user wants the output to be accurate and complete, possibly with exact extracts from the paper....</p>
+                    </div>
+                
+                </div>
+            
+                <div class="card">
+                    <h2>Physics</h2>
+                    <p>3 papers in this field</p>
+                    
+                    <h3>Subfields</h3>
+                    <div id="subfield_Physics" class="chart"></div>
+                    
+                    <h3>Recent Papers in Physics</h3>
+            
+                    <div class="paper-card">
+                        <h3 class="paper-title">Quantitative Measure of Stability in Gene Regulatory Networks</h3>
+                        <div class="metadata">Authors: P. Ao</div>
+                        <p>A quantitative measure of stability in stochastic dynamics is introduced as a potential function, drawing parallels with the adaptive and developmental landscapes proposed by S. Wright and C.H. Waddington. The paper discusses recent experimental work on artificial gene networks and their application...</p>
+                    </div>
+                
+                    <div class="paper-card">
+                        <h3 class="paper-title">The Rogue Waves with Quintic Nonlinearity and Nonlinear Dispersion effects in Nonlinear Optical Fibers</h3>
+                        <div class="metadata">Authors: Li-Chen Zhao, Chong Liu, Zhan-ying Yang</div>
+                        <p>We present exact rogue wave solutions for the generalized nonlinear Schrödinger equation incorporating higher-order effects such as third-order dispersion, self-phase modulation, cross-phase modulation, and self-steepening. These solutions are derived using the Darboux transformation method, which a...</p>
+                    </div>
+                
+                    <div class="paper-card">
+                        <h3 class="paper-title">The Rogue Waves with Quintic Nonlinearity and Nonlinear Dispersion effects in Nonlinear Optical Fibers</h3>
+                        <div class="metadata">Authors: Li-Chen Zhao, Chong Liu, Zhan-ying Yang</div>
+                        <p>We present exact rogue wave solutions for the generalized nonlinear Schrödinger equation incorporating higher-order effects such as third-order dispersion, self-phase modulation, cross-phase modulation, and self-steepening. These solutions are derived using the Darboux transformation method, which a...</p>
+                    </div>
+                
+                </div>
+            
+                <footer>
+                    <p>Generated by ResearchOverviewAI</p>
+                </footer>
+            </div>
+            
+            <script>
+        
+                // Field distribution chart
+                var fieldData = [{
+                    x: ["Education", "Mathematics", "Uncategorized", "Computer Science", "Physics"],
+                    y: [1, 5, 6, 4, 2],
+                    type: 'bar',
+                    marker: {
+                        color: 'rgba(55, 128, 191, 0.7)',
+                        line: {
+                            color: 'rgba(55, 128, 191, 1.0)',
+                            width: 2
+                        }
+                    }
+                }];
+                
+                var fieldLayout = {
+                    title: 'Papers by Research Field',
+                    xaxis: { title: 'Field' },
+                    yaxis: { title: 'Paper Count' }
+                };
+                
+                Plotly.newPlot('fieldChart', fieldData, fieldLayout);
+            
+                    // Subfield chart for Education
+                    var subfield_EducationData = [{
+                        x: ["Educational Psychology", "Math Anxiety", "Clinical Psychology", "Developmental Psychology", "Social Psychology"],
+                        y: [1, 1, 1, 1, 1],
+                        type: 'bar',
+                        marker: {
+                            color: 'rgba(50, 171, 96, 0.7)',
+                            line: {
+                                color: 'rgba(50, 171, 96, 1.0)',
+                                width: 2
+                            }
+                        }
+                    }];
+                    
+                    var subfield_EducationLayout = {
+                        title: 'Subfields in Education',
+                        xaxis: { title: 'Subfield' },
+                        yaxis: { title: 'Count' }
+                    };
+                    
+                    Plotly.newPlot('subfield_Education', subfield_EducationData, subfield_EducationLayout);
+                
+                    // Subfield chart for Mathematics
+                    var subfield_MathematicsData = [{
+                        x: ["Mathematical Biology", "Stochastic Processes", "Cell Biology", "Evolutionary Biology", "Biophysics", "Applied Mathematics", "Epidemiology", "Probability Theory", "Partial Differential Equations (PDE)", "Geometric Analysis", "Carleman Estimates", "Unique Continuation", "Parabolic Equations", "Algebraic Geometry", "Heuristic Development", "Cylindrical Algebraic Decomposition", "Symbolic Computation", "Machine Learning", "Real Analysis", "Computational Mathematics", "Discrete Mathematics", "Special Functions"],
+                        y: [1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                        type: 'bar',
+                        marker: {
+                            color: 'rgba(50, 171, 96, 0.7)',
+                            line: {
+                                color: 'rgba(50, 171, 96, 1.0)',
+                                width: 2
+                            }
+                        }
+                    }];
+                    
+                    var subfield_MathematicsLayout = {
+                        title: 'Subfields in Mathematics',
+                        xaxis: { title: 'Subfield' },
+                        yaxis: { title: 'Count' }
+                    };
+                    
+                    Plotly.newPlot('subfield_Mathematics', subfield_MathematicsData, subfield_MathematicsLayout);
+                
+                    // Subfield chart for Computer Science
+                    var subfield_Computer_ScienceData = [{
+                        x: ["Language Identification", "Structural Feature Extraction", "Word Recognition", "Subfield 1: Document Analysis", "Subfield 2: Script Identification", "Reinforcement Learning", "Multi-Agent Systems", "Game Theory", "Network Topology", "Computer Vision", "Human-Computer Interaction", "Image Processing", "Omnidirectional Imaging", "Viewports", "Data Mining", "Social Network Analysis", "Network Science", "Community Detection", "Bayesian Non-parametric Models"],
+                        y: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                        type: 'bar',
+                        marker: {
+                            color: 'rgba(50, 171, 96, 0.7)',
+                            line: {
+                                color: 'rgba(50, 171, 96, 1.0)',
+                                width: 2
+                            }
+                        }
+                    }];
+                    
+                    var subfield_Computer_ScienceLayout = {
+                        title: 'Subfields in Computer Science',
+                        xaxis: { title: 'Subfield' },
+                        yaxis: { title: 'Count' }
+                    };
+                    
+                    Plotly.newPlot('subfield_Computer_Science', subfield_Computer_ScienceData, subfield_Computer_ScienceLayout);
+                
+                    // Subfield chart for Physics
+                    var subfield_PhysicsData = [{
+                        x: ["Mathematical Biology", "Stochastic Processes", "Cell Biology", "Evolutionary Biology", "Biophysics", "Rogue Waves", "Integrable Systems", "Solitons", "Higher-Order Effects", "Primary: Nonlinear Optics", "Nonlinear Optics", "Solitons and Integrable Systems", "Soliton Theory"],
+                        y: [1, 1, 1, 1, 1, 2, 2, 1, 1, 1, 1, 1, 1],
+                        type: 'bar',
+                        marker: {
+                            color: 'rgba(50, 171, 96, 0.7)',
+                            line: {
+                                color: 'rgba(50, 171, 96, 1.0)',
+                                width: 2
+                            }
+                        }
+                    }];
+                    
+                    var subfield_PhysicsLayout = {
+                        title: 'Subfields in Physics',
+                        xaxis: { title: 'Subfield' },
+                        yaxis: { title: 'Count' }
+                    };
+                    
+                    Plotly.newPlot('subfield_Physics', subfield_PhysicsData, subfield_PhysicsLayout);
+                
+            </script>
+        </body>
+        </html>
+        

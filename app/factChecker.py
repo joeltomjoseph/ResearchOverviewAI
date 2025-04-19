@@ -161,7 +161,7 @@ class FactChecker:
         
         # Check each metadata field for accuracy
         fieldsToVerify = [
-            "title", "summary", "datasets", "metrics", 
+            "datasets", "metrics", 
             "methods", "applications", "limitations", "areasOfImprovement"
         ]
         
@@ -170,66 +170,103 @@ class FactChecker:
                 continue
                 
             fieldValue = metadata[field]
-            verification = self._verifyField(originalText, field, fieldValue)
-            
-            if not verification["accurate"]:
+            # Ensure fieldValue is a list for verification, even if it's currently a string due to prior error
+            if not isinstance(fieldValue, list):
+                # Attempt to handle malformed strings (e.g., comma-separated chars)
+                if isinstance(fieldValue, str) and ',' in fieldValue:
+                    current_value_list = [item.strip() for item in fieldValue.split(',') if item.strip()]
+                elif isinstance(fieldValue, str):  # Single string, wrap in list
+                    current_value_list = [fieldValue]
+                else:  # Unknown type, skip verification for this field
+                    print(f"Warning: Skipping verification for field '{field}' due to unexpected type: {type(fieldValue)}")
+                    continue
+            else:
+                current_value_list = fieldValue
+
+            verification = self._verifyField(originalText, field, current_value_list)  # Pass the list
+            # print(f"Verification output for {field}: {verification}")  # Keep commented out unless debugging
+
+            if not verification.get("accurate", True):  # Default to accurate if key missing
                 verificationResults["accurate"] = False
-                verificationResults["corrections"][field] = verification["suggestedCorrection"]
-                verificationResults["verificationNotes"][field] = verification["note"]
+                correction = verification.get("suggestedCorrection")
+
+                # Ensure correction is a list of strings before assigning
+                if isinstance(correction, list) and all(isinstance(item, str) for item in correction):
+                    verificationResults["corrections"][field] = correction
+                elif isinstance(correction, str):
+                    # Attempt to parse if it's a string representation of a list or comma-separated
+                    try:
+                        # Basic attempt to handle comma-separated strings if the LLM fails list format
+                        parsed_correction = [item.strip() for item in correction.split(',') if item.strip()]
+                        if parsed_correction:  # Only assign if parsing yields something
+                            verificationResults["corrections"][field] = parsed_correction
+                            print(f"Warning: Parsed suggestedCorrection string for {field} into list.")
+                        else:
+                            print(f"Warning: Could not parse suggestedCorrection string for {field}: {correction}. Keeping original.")
+                    except Exception as e:
+                        print(f"Warning: Error parsing suggestedCorrection string for {field}: {correction}. Error: {e}. Keeping original.")
+                else:
+                    print(f"Warning: Unexpected type or format for suggestedCorrection for {field}: {type(correction)}. Keeping original.")
+
+                verificationResults["verificationNotes"][field] = verification.get("note", "Correction applied.")
         
         return verificationResults
     
-    def _verifyField(self, text: str, fieldName: str, fieldValue: Any) -> Dict:
+    def _verifyField(self, text: str, fieldName: str, fieldValue: List[str]) -> Dict:
         """
-        Verify a single metadata field against the original paper
+        Verify a single metadata field (as a list) against the original paper
         
         Args:
             text: The original paper text
             fieldName: The name of the field to verify
-            fieldValue: The value of the field to verify
+            fieldValue: The value of the field (as a list of strings) to verify
             
         Returns:
             Dictionary with verification results for this field
         """
-        # Convert field value to string for prompt
-        if isinstance(fieldValue, list):
-            fieldText = ", ".join(str(item) for item in fieldValue)
-        else:
-            fieldText = str(fieldValue)
-            
+        # Convert field value list to string for prompt
+        fieldText = ", ".join(fieldValue)  # Join list items with ", "
+        
         # Check if the field value is accurate
         try:
             result = self._resilientModelCall(
                 prompt=f"""
                 Original paper excerpt: 
                 
-                {text[:3000]}...
+                {text}...
                 
-                The following {fieldName} was extracted from this paper:
+                The following {fieldName} were extracted from this paper:
                 
                 {fieldText}
                 
-                Verify if this {fieldName} is accurate based on the original paper. 
-                Focus on factual accuracy, not stylistic differences.
+                Verify if this list of {fieldName} is accurate based on the original paper.
+                Focus on factual accuracy, not stylistic differences. Ensure each item in the list is a complete word or phrase.
                 
-                Return only true if the {fieldName} is accurate, or false with a correction if it's inaccurate.
+                Return an object with 'accurate' (boolean), 'note' (string explanation), and 'suggestedCorrection' (a JSON list of strings representing the corrected list of {fieldName}).
+                If the list is accurate, return 'accurate': true and the original list in 'suggestedCorrection'.
+                If inaccurate, return 'accurate': false, an explanation in 'note', and the corrected list of strings in 'suggestedCorrection'.
+                Example of corrected list format: ["item 1", "item 2", "corrected item 3"]
                 """,
-                systemMessage="You are a fact-checking assistant verifying metadata extracted from research papers.",
+                systemMessage="You are a fact-checking assistant verifying metadata extracted from research papers. Ensure corrections are provided as a JSON list of strings.",
                 formatSpec={
                     "type": "object", 
                     "properties": {
                         "accurate": {"type": "boolean"},
                         "note": {"type": "string"},
-                        "suggestedCorrection": {"type": "string"}
+                        "suggestedCorrection": {  # Expect a list of strings
+                            "type": "array",
+                            "items": {"type": "string"}
+                        }
                     },
-                    "required": ["accurate", "note"]
+                    "required": ["accurate", "note", "suggestedCorrection"]
                 }
             )
             
             return result
         except Exception as e:
             print(f"Field verification failed for {fieldName}: {str(e)}")
-            return {"accurate": True, "note": "Verification failed due to technical error."}
+            # Return original value as correction in case of error, marked as accurate to avoid incorrect changes
+            return {"accurate": True, "note": f"Verification failed due to technical error: {str(e)}", "suggestedCorrection": fieldValue}
     
     def storeFactCheckResults(self, paperId: str, results: Dict):
         """

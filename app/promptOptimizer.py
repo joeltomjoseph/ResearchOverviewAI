@@ -64,7 +64,7 @@ def breakPrompt(text: str, maxTokensPerChunk: int = 1000, overlapTokens: int = 1
     
     return chunks
 
-def createTaskSpecificPrompts(text: str, taskType: str) -> List[Dict]:
+def createTaskSpecificPrompts(text: str, taskType: str, context_size: int = 2000) -> List[Dict]:
     """
     Creates smaller, task-specific prompts from a larger text
     
@@ -72,11 +72,17 @@ def createTaskSpecificPrompts(text: str, taskType: str) -> List[Dict]:
         text: The input text to analyze
         taskType: Type of analysis to perform ('industryApplications', 
                    'academicApplications', 'taxonomy', 'factChecking')
+        context_size: The maximum token context size to use for chunking (defaults to 2000)
     
     Returns:
         List of dictionaries with prompt text and contextual information
     """
-    baseChunks = breakPrompt(text, maxTokensPerChunk=2000)
+    # Use the provided context_size for chunking
+    # Subtract a buffer (e.g., 200 tokens) for the prompt template and overlap
+    buffer_for_prompt = 200 
+    max_chunk_tokens = max(500, context_size - buffer_for_prompt) # Ensure a minimum chunk size
+    
+    baseChunks = breakPrompt(text, maxTokensPerChunk=max_chunk_tokens)
     taskPrompts = []
     
     if taskType == "industryApplications":

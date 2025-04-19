@@ -4,7 +4,7 @@ import os
 import time
 import datetime
 import pandas as pd
-from database import initDatabases, storePaper, semanticSearch, getPapersByIds, getAllPapers, getPaperById
+from database import initDatabases, storePaper, semanticSearch, getPapersByIds, getAllPapers, getPaperById, getPaperByTitle
 from extractText import extractText, chunkDocument
 from processPaper import generateMetadata, getAvailableModels
 from miscFunctions import paperInfoCard, removeAllPapersDialog
@@ -12,6 +12,7 @@ from taxonomyProcessor import TaxonomyProcessor
 from factChecker import FactChecker
 from applicationAnalyzer import ApplicationAnalyzer
 from reportGenerator import ReportGenerator
+import random
 
 # Initialize processors
 taxonomyProcessor = TaxonomyProcessor()
@@ -193,6 +194,8 @@ def scrapePapers():
                     try:
                         # Fetch trending fields from Google Scholar
                         topFields = taxonomyProcessor.fetchTopFieldsFromScholar(10)
+                        # Randomly shuffle the order of fields before processing to make things interesting
+                        random.shuffle(topFields)
                         
                         for field in topFields:
                             if st.session_state.stop_scraping:
@@ -210,7 +213,7 @@ def scrapePapers():
                                 
                                 processPapers(client.results(search), generateTaxonomy, checkFacts, analyzeApplications)
                             except Exception as e:
-                                st.error(f"Error processing field {field}: {str(e)}")
+                                # st.error(f"Error processing field {field}: {str(e)}")
                                 continue  # Continue with next field even if one fails
                             
                     except Exception as e:
@@ -230,7 +233,7 @@ def scrapePapers():
                 search = arxiv.Search(keyword, max_results=maxResults)
             else:
                 # print(keyword)
-                # print(f"Searching by category: {ARXIV_CATEGORIES[keyword]}")
+                print(f"Searching by category: {ARXIV_CATEGORIES[keyword]}")
                 search = arxiv.Search(
                     query=f"{keyword}+OR+{ARXIV_CATEGORIES[keyword]}",
                     max_results=maxResults,
@@ -242,6 +245,11 @@ def scrapePapers():
 def processPapers(papers, generateTaxonomy, checkFacts, analyzeApplications):
     """Helper function to process a batch of papers"""
     for paper in papers:
+        print(f"Processing paper: {paper.title}")
+        # If the paper is already in the database, skip it
+        if getPaperByTitle(paper.title):
+            st.warning(f"Paper *({paper.title})* already exists in the database. Skipping...")
+            continue
         path = paper.download_pdf("data/papers")  # Download the paper
         text = extractText(path)
         st.write(f"Processing **{paper.title}**...")
@@ -682,7 +690,8 @@ selectedEmbedModel = st.sidebar.selectbox(
 # Set appropriate models for our processors
 taxonomyProcessor.modelName = selectedGenModel
 factChecker.modelName = selectedGenModel
-applicationAnalyzer.modelName = selectedGenModel
+# Update ApplicationAnalyzer with the selected model and its context size
+applicationAnalyzer.update_model(selectedGenModel) 
 
 # Display the selected page
 if menu == "Upload Papers":

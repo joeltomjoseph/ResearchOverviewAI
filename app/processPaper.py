@@ -42,11 +42,12 @@ def generateMetadata(text: str, modelName: str) -> dict:
         response = ollama.generate(
             model = modelName,
             format=Metadata.model_json_schema(), # Format the response as a JSON schema from the Metadata model
-            options={"num_ctx": 4096, "temperature": 0}, # Increase the context size and lower temp
+            options={"num_ctx": 4096, "temperature": 0.1}, # Increase the context size and lower temp
             system="You are a research assistant that has been tasked with generating structured metadata for a research paper. Retry if the output is incomplete or inaccurate or failed.",
             prompt=f"""
-                PROMPT: Generate metadata for the following research paper in JSON format. 
-                Use exact extracts/sections/titles/names where possible. 
+                PROMPT: Generate metadata for the following research paper in JSON format.
+                Ensure that all string values, especially items within lists (like datasets, metrics, methods, applications, limitations, areasOfImprovement), are complete and correctly spelled words or phrases. Do not split words into individual characters or add unnecessary characters like underscores unless they are part of a standard term.
+                Use exact extracts/sections/titles/names where possible, but format them correctly as proper strings.
                 Validate the output for accuracy and completeness.
 
                 CONTENT: {text}..."""
