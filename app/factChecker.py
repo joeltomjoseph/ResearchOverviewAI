@@ -4,14 +4,16 @@ import time
 from typing import Dict, List, Any
 import sqlite3
 from promptOptimizer import createTaskSpecificPrompts
+from modelUtils import getModelContextSize
 
 class FactChecker:
     """Checks research papers for factual accuracy and flags potential issues"""
     
-    def __init__(self, modelName: str = "llama3:8b", maxRetries: int = 3):
+    def __init__(self, modelName: str = "llama3.1:8b", maxRetries: int = 3):
         """Initialize the fact checker with a specific model"""
         self.modelName = modelName
         self.maxRetries = maxRetries
+        self.context_size = getModelContextSize(self.modelName)
     
     def _resilientModelCall(self, prompt: str, systemMessage: str, formatSpec: Dict) -> Dict:
         """Make a resilient call to the Ollama model with retries"""
@@ -23,7 +25,7 @@ class FactChecker:
                 response = ollama.generate(
                     model=self.modelName,
                     format=formatSpec,
-                    options={"num_ctx": 4096, "temperature": 0.1},
+                    options={"num_ctx": self.context_size, "temperature": 0.1},
                     system=systemMessage,
                     prompt=prompt
                 )
@@ -57,7 +59,7 @@ class FactChecker:
             Dictionary containing fact checking results
         """
         # Break the text into manageable chunks for fact checking
-        factCheckPrompts = createTaskSpecificPrompts(text, "factChecking")
+        factCheckPrompts = createTaskSpecificPrompts(text, "factChecking", context_size=self.context_size)
         
         # Check each chunk and collect results
         allResults = []

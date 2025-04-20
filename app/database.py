@@ -118,6 +118,7 @@ collection = chromaClient.get_or_create_collection("papers", embedding_function=
 
 def storePaper(metadata: dict, documents: list[Document]):
     ''' Stores the metadata in the SQLite and embeds documents (chunked parts of a paper) into ChromaDB '''
+    global chromaClient, collection  # Access global Chroma client and collection
     paperId = str(uuid.uuid4())
     
     # SQLite to store the metadata of paper
@@ -156,20 +157,22 @@ def storePaper(metadata: dict, documents: list[Document]):
     
     conn.commit()
     conn.close()
+
+    print(f"Stored {len(documents)} documents in SQLite for paper ID: {paperId}")
     
     # Now try to add to ChromaDB with proper error handling
-    global collection  # Access the global collection variable
     try:
+        # Attempt to add documents to ChromaDB, handling missing collection
         try:
-            # Try to use existing collection
             collection.add(
                 ids=[f"{paperId}_{i}" for i in range(len(documents))],
                 documents=documentContents,
                 metadatas=documentMetadata,
             )
         except Exception as e:
-            if "does not exist" in str(e):
-                # If collection doesn't exist, recreate it and retry
+            msg = str(e)
+            print(f"ChromaDB error: {msg}")
+            if "does not exist" in msg:
                 print("ChromaDB collection not found, recreating...")
                 collection = chromaClient.get_or_create_collection("papers", embedding_function=resilientEF)
                 collection.add(
@@ -177,19 +180,27 @@ def storePaper(metadata: dict, documents: list[Document]):
                     documents=documentContents,
                     metadatas=documentMetadata,
                 )
+            elif "compaction" in msg:
+                # Reset Chroma client and retry on compaction errors
+                print("ChromaDB compaction error detected, resetting collection and retrying...")
+                chromaClient = chromadb.PersistentClient("./data/chroma")
+                collection = chromaClient.get_or_create_collection("papers", embedding_function=resilientEF)
+                collection.add(
+                    ids=[f"{paperId}_{i}" for i in range(len(documents))],
+                    documents=documentContents,
+                    metadatas=documentMetadata,
+                )
             else:
-                raise e
-        
+                raise
         # Mark documents as embedded in SQLite
         conn = sqlite3.connect('data/metadata.db')
         c = conn.cursor()
         c.execute("UPDATE document_content SET embedded = ? WHERE paper_id = ?", (True, paperId))
         conn.commit()
         conn.close()
-        
     except Exception as e:
-        print(f"Error adding documents to ChromaDB: {str(e)}")
-        print(f"Documents stored in SQLite backup, will attempt to embed later.")
+        print(f"Error adding documents to ChromaDB: {e}")
+        print("Documents stored in SQLite backup, will attempt to embed later.")
         
     return paperId  # Return the generated ID
 

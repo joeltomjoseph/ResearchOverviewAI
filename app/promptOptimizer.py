@@ -3,6 +3,8 @@ from nltk.tokenize import sent_tokenize
 import textwrap
 import streamlit as st
 from typing import List, Dict
+import ollama
+from modelUtils import getModelContextSize
 
 # Download NLTK data if not already downloaded
 try:
@@ -64,7 +66,7 @@ def breakPrompt(text: str, maxTokensPerChunk: int = 1000, overlapTokens: int = 1
     
     return chunks
 
-def createTaskSpecificPrompts(text: str, taskType: str, context_size: int = 2000) -> List[Dict]:
+def createTaskSpecificPrompts(text: str, taskType: str, context_size: int = 20000) -> List[Dict]:
     """
     Creates smaller, task-specific prompts from a larger text
     
@@ -72,7 +74,7 @@ def createTaskSpecificPrompts(text: str, taskType: str, context_size: int = 2000
         text: The input text to analyze
         taskType: Type of analysis to perform ('industryApplications', 
                    'academicApplications', 'taxonomy', 'factChecking')
-        context_size: The maximum token context size to use for chunking (defaults to 2000)
+        context_size: The maximum token context size to use for chunking (defaults to 20000)
     
     Returns:
         List of dictionaries with prompt text and contextual information
@@ -148,20 +150,20 @@ def executePromptPipeline(text: str, tasks: List[str], modelName: str) -> Dict:
     Returns:
         Dictionary with results from each task
     """
-    import ollama
+    context_size = getModelContextSize(modelName)  # determine context size dynamically
     
     results = {}
     context = {"originalText": text}
     
     for task in tasks:
-        taskPrompts = createTaskSpecificPrompts(text, task)
+        taskPrompts = createTaskSpecificPrompts(text, task, context_size=context_size)
         taskResults = []
         
         for promptData in taskPrompts:
             try:
                 response = ollama.generate(
                     model=modelName,
-                    options={"num_ctx": 4096, "temperature": 0.1},
+                    options={"num_ctx": context_size, "temperature": 0.1},
                     system=f"You are analyzing a research paper for {task}. Provide detailed and accurate analysis.",
                     prompt=promptData["promptText"] + "\n\nContext from previous analyses: " + str(context)
                 )

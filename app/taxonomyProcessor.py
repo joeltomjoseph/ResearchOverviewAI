@@ -8,16 +8,18 @@ from bs4 import BeautifulSoup
 from collections import Counter
 import streamlit as st
 from promptOptimizer import createTaskSpecificPrompts
+from modelUtils import getModelContextSize
 
 class TaxonomyProcessor:
     """Process and organize papers into taxonomic categories"""
     
-    def __init__(self, modelName: str = "nomic-embed-text:latest", maxRetries: int = 3):
+    def __init__(self, modelName: str = "llama3.1:8b", maxRetries: int = 3):
         """Initialize the taxonomy processor with a specific model"""
         self.modelName = modelName
         self.maxRetries = maxRetries
         self.taxonomyCache = {}
-        
+        self.context_size = getModelContextSize(modelName)
+
     def _resilientModelCall(self, prompt: str, systemMessage: str, formatSpec: Dict) -> Dict:
         """Make a resilient call to the Ollama model with retries"""
         retries = 0
@@ -28,7 +30,7 @@ class TaxonomyProcessor:
                 response = ollama.generate(
                     model=self.modelName,
                     format=formatSpec,
-                    options={"num_ctx": 4096, "temperature": 0},
+                    options={"num_ctx": self.context_size, "temperature": 0.2},
                     system=systemMessage,
                     prompt=prompt
                 )
@@ -57,7 +59,7 @@ class TaxonomyProcessor:
         """Extract taxonomic information from a paper's text"""
         try:
             # Break the text into manageable chunks for taxonomy extraction
-            taxonomyPrompts = createTaskSpecificPrompts(text, "taxonomy")
+            taxonomyPrompts = createTaskSpecificPrompts(text, "taxonomy", context_size=self.context_size)
             taxonomyResults = []
             
             for promptData in taxonomyPrompts[:2]:  # Use only first two chunks for efficiency

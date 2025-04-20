@@ -3,16 +3,17 @@ import arxiv
 import os
 import time
 import datetime
+import random
 import pandas as pd
 from database import initDatabases, storePaper, semanticSearch, getPapersByIds, getAllPapers, getPaperById, getPaperByTitle
 from extractText import extractText, chunkDocument
-from processPaper import generateMetadata, getAvailableModels
 from miscFunctions import paperInfoCard, removeAllPapersDialog
+from processPaper import generateMetadata
+from modelUtils import getAvailableModels
 from taxonomyProcessor import TaxonomyProcessor
 from factChecker import FactChecker
 from applicationAnalyzer import ApplicationAnalyzer
 from reportGenerator import ReportGenerator
-import random
 
 # Initialize processors
 taxonomyProcessor = TaxonomyProcessor()
@@ -75,8 +76,8 @@ def uploadPapers():
                     with st.spinner("Performing detailed fact checking..."):
                         factResults = factChecker.checkFacts(text)
                         factChecker.storeFactCheckResults(paperId, factResults)
-                        if factResults["total_issues"] > 0:
-                            st.warning(f"Found {factResults['total_issues']} potential factual issues")
+                        if factResults.get("totalIssues", 0) > 0:
+                            st.warning(f"Found {factResults['totalIssues']} potential factual issues")
                         else:
                             st.success("No significant factual issues detected")
                 
@@ -286,8 +287,9 @@ def processPapers(papers, generateTaxonomy, checkFacts, analyzeApplications):
             with st.spinner("Performing detailed fact checking..."):
                 factResults = factChecker.checkFacts(text)
                 factChecker.storeFactCheckResults(paperId, factResults)
-                if factResults["total_issues"] > 0:
-                    st.warning(f"Found {factResults['total_issues']} potential factual issues")
+                total = factResults.get("totalIssues", 0)
+                if total > 0:
+                    st.warning(f"Found {total} potential factual issues")
                 else:
                     st.success("No significant factual issues detected")
         
@@ -527,21 +529,22 @@ def viewFactChecking():
             factResults = factChecker.getFactCheckForPaper(paperId)
             
             if not factResults:
-                st.warning("No fact checking results available for this paper. Process the paper with fact checking enabled.")
-                st.button("Check Facts Now", on_click=lambda: checkPaperFacts(paperId, selectedPaper["title"]))
+                with st.expander("No fact checking results available", expanded=True):
+                    st.warning("No fact checking results available for this paper. Process the paper with fact checking enabled.")
+                    st.button("Check Facts Now", on_click=lambda: checkPaperFacts(paperId, selectedPaper["title"]))
                 return
             
             # Display overall assessment
             st.subheader("Overall Assessment")
             
-            severityCounts = factResults["severity_count"]
-            totalIssues = factResults["total_issues"]
+            severityCount = factResults.get("severityCount", {"low":0, "medium":0, "high":0})
+            totalIssues = factResults.get("totalIssues", 0)
             
             if totalIssues == 0:
                 st.success("No significant factual issues detected in this paper.")
             else:
-                st.warning(f"Found {totalIssues} potential factual issues: {severityCounts['low']} low, {severityCounts['medium']} medium, and {severityCounts['high']} high severity.")
-                st.write(factResults["overall_assessment"])
+                st.warning(f"Found {totalIssues} potential factual issues: {severityCount['low']} low, {severityCount['medium']} medium, and {severityCount['high']} high severity.")
+                st.write(factResults.get("overallAssessment", ""))
             
             # Display issues if any
             if totalIssues > 0:
@@ -553,37 +556,54 @@ def viewFactChecking():
                         st.write(f"**Problem**: {issue['problem']}")
                         st.write(f"**Explanation**: {issue['explanation']}")
                         
-                        if "suggested_correction" in issue and issue["suggested_correction"]:
-                            st.write(f"**Suggested Correction**: {issue['suggested_correction']}")
+                        if 'suggestedCorrection' in issue and issue['suggestedCorrection']:
+                            st.write(f"**Suggested Correction**: {issue['suggestedCorrection']}")
 
 def checkPaperFacts(paperId, title):
     '''Check facts for a paper on demand'''
-    st.info(f"Checking facts for '{title}'...")
+    with st.expander("Checking facts now...", expanded=True):
+        st.info(f"Checking facts for '{title}'...")
     
-    # Get paper path
-    paperFiles = [f for f in os.listdir("data/papers") if f.endswith(".pdf")]
-    paperPath = None
-    for fileName in paperFiles:
-        # Simple heuristic to match paper
-        if title.lower() in fileName.lower():
-            paperPath = os.path.join("data/papers", fileName)
-            break
-    
-    if not paperPath:
-        st.error("Paper file not found")
-        return
-    
-    # Extract text
-    text = extractText(paperPath)
-    
-    # Check facts
-    with st.spinner("Performing fact checking..."):
-        factResults = factChecker.checkFacts(text)
-        factChecker.storeFactCheckResults(paperId, factResults)
-    
-    st.success("Fact checking complete!")
-    time.sleep(1)
-    st.rerun()
+        # Get paper path
+        paperFiles = [f for f in os.listdir("data/papers") if f.endswith(".pdf")]
+        paperPath = None
+        for fileName in paperFiles:
+            # Simple heuristic to match paper
+            if title.lower() in fileName.lower():
+                paperPath = os.path.join("data/papers", fileName)
+                break
+        
+        if not paperPath:
+            st.error("Paper file not found, searching arXiv...")
+            link = getPaperById(paperId)["link"]
+            if link:
+                st.write(f"Paper link: {link}")
+            else:
+                st.error("Paper link not found")
+                return
+            # Search arXiv for the paper and download it
+            try:
+                client = arxiv.Client()
+                search = arxiv.Search(id_list=[link.split("/")[-1]])
+                results = client.results(search)
+                paper = next(results)
+                paperPath = paper.download_pdf("data/papers")
+                st.write(f"Downloaded paper from arXiv: {paper.title}")
+            except StopIteration:
+                st.error("No paper found with the given ID.")
+                return
+        
+        # Extract text
+        text = extractText(paperPath)
+        
+        # Check facts
+        with st.spinner("Performing fact checking..."):
+            factResults = factChecker.checkFacts(text)
+            factChecker.storeFactCheckResults(paperId, factResults)
+        
+        st.success("Fact checking complete!")
+        time.sleep(1)
+        st.rerun()
 
 @st.fragment()
 def generateReports():
@@ -691,7 +711,7 @@ selectedEmbedModel = st.sidebar.selectbox(
 taxonomyProcessor.modelName = selectedGenModel
 factChecker.modelName = selectedGenModel
 # Update ApplicationAnalyzer with the selected model and its context size
-applicationAnalyzer.update_model(selectedGenModel) 
+applicationAnalyzer.updateModel(selectedGenModel) 
 
 # Display the selected page
 if menu == "Upload Papers":

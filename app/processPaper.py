@@ -1,6 +1,7 @@
 import ollama
 import pydantic
 import json
+from modelUtils import getAvailableModels, getModelContextSize
 
 from langchain_core.documents import Document
 
@@ -29,20 +30,15 @@ class Metadata(pydantic.BaseModel):
     limitations: list[str]
     areasOfImprovement: list[str]
 
-def getAvailableModels() -> list[str]:
-    ''' Gets the list of available model names from the Ollama API '''
-    try:
-        return [model.model for model in ollama.list().models]
-    except Exception as e:
-        raise Exception(f"Error getting available models (Make sure Ollama is running): {str(e)}")
-
 def generateMetadata(text: str, modelName: str) -> dict:
     ''' Generates metadata from the given text using the specified model and returns it as a dictionary (JSON)'''
     try:
+        # Determine context size dynamically
+        context_size = getModelContextSize(modelName)
         response = ollama.generate(
-            model = modelName,
-            format=Metadata.model_json_schema(), # Format the response as a JSON schema from the Metadata model
-            options={"num_ctx": 4096, "temperature": 0.1}, # Increase the context size and lower temp
+            model=modelName,
+            format=Metadata.model_json_schema(),
+            options={"num_ctx": context_size, "temperature": 0.1},
             system="You are a research assistant that has been tasked with generating structured metadata for a research paper. Retry if the output is incomplete or inaccurate or failed.",
             prompt=f"""
                 PROMPT: Generate metadata for the following research paper in JSON format.

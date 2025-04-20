@@ -5,71 +5,23 @@ import re  # Import regex
 from typing import Dict, List
 import sqlite3
 from promptOptimizer import createTaskSpecificPrompts
+from modelUtils import getModelContextSize
 
 class ApplicationAnalyzer:
     """Analyzes research papers for their practical applications in industry and academia"""
     
-    def __init__(self, modelName: str = "llama3:8b", maxRetries: int = 3):
+    def __init__(self, modelName: str = "llama3.1:8b", maxRetries: int = 3):
         """Initialize the application analyzer with a specific model"""
         self.modelName = modelName
         self.maxRetries = maxRetries
-        # Initialize context size based on the initial model
-        self.context_size = self._get_model_context_size(self.modelName) 
+        self.context_size = getModelContextSize(self.modelName)
         
-    def _get_model_context_size(self, model_name_to_check: str) -> int:
-        """Retrieves the context size (num_ctx or context_length) for a given Ollama model."""
-        default_size = 4096  # Default if lookup fails
-        try:
-            model_info = ollama.show(model_name_to_check).modelinfo
-            # print(f"Model info for '{model_name_to_check}': {model_info}")
-            
-            # 1. Try parsing 'num_ctx' from 'parameters' string (common format)
-            if 'parameters' in model_info:
-                params_str = model_info['parameters']
-                match = re.search(r'num_ctx\s+(\d+)', params_str)
-                if match:
-                    print(f"Found num_ctx in parameters: {int(match.group(1))}")
-                    return int(match.group(1))
-                else:
-                    # Fallback parsing if regex fails
-                    for line in params_str.splitlines():
-                        parts = line.strip().split()
-                        if len(parts) == 2 and parts[0] == 'num_ctx':
-                            try:
-                                print(f"Found num_ctx in parameters (split): {int(parts[1])}")
-                                return int(parts[1])
-                            except ValueError:
-                                continue 
-            
-            # Check for a key ending with '.context_length'
-            for key, value in model_info.items():
-                if key.endswith('.context_length'):
-                    try:
-                        print(f"Found context length in details key '{key}': {int(value)}")
-                        return int(value)
-                    except (ValueError, TypeError):
-                        continue # Skip if value is not a valid integer
-            # Fallback: Check for a simple 'context_length' key
-            if 'context_length' in model_info:
-                    try:
-                        print(f"Found context_length in details: {int(model_info['context_length'])}")
-                        return int(model_info['context_length'])
-                    except (ValueError, TypeError):
-                        pass
-
-            print(f"Warning: Could not automatically determine context length for model '{model_name_to_check}'. Using default: {default_size}")
-            return default_size
-            
-        except Exception as e:
-            print(f"Error fetching model info for '{model_name_to_check}': {e}. Using default context size: {default_size}") 
-            return default_size
-
-    def update_model(self, new_model_name: str):
+    def updateModel(self, newModelName: str):
         """Updates the model used by the analyzer and its context size."""
-        if new_model_name != self.modelName:
-            print(f"ApplicationAnalyzer updating model to: {new_model_name}")
-            self.modelName = new_model_name
-            self.context_size = self._get_model_context_size(self.modelName)
+        if newModelName != self.modelName:
+            print(f"ApplicationAnalyzer updating model to: {newModelName}")
+            self.modelName = newModelName
+            self.context_size = getModelContextSize(self.modelName)
             print(f"ApplicationAnalyzer context size updated to: {self.context_size}")
 
     def _resilientModelCall(self, prompt: str, systemMessage: str, formatSpec: Dict) -> Dict:
