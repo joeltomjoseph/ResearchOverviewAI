@@ -314,7 +314,7 @@ def viewAllPapers():
     papers = getAllPapers()
     
     for paper in papers:
-        paperInfoCard(paper)
+        paperInfoCard(paper, taxonomyProcessor, applicationAnalyzer, factChecker)
 
 @st.fragment()
 def searchPapers():
@@ -326,7 +326,7 @@ def searchPapers():
         papers = getPapersByIds(paperIds)
         
         for paper in papers:
-            paperInfoCard(paper)
+            paperInfoCard(paper, taxonomyProcessor, applicationAnalyzer, factChecker)
 
 @st.fragment()
 def viewTaxonomy():

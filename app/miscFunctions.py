@@ -1,5 +1,8 @@
 import streamlit as st
 
+from taxonomyProcessor import TaxonomyProcessor
+from applicationAnalyzer import ApplicationAnalyzer
+from factChecker import FactChecker
 from database import removePaper, removeAllPapers, updatePaper
 
 @st.dialog("Delete Paper")
@@ -82,7 +85,123 @@ def editPaperDialog():
                     st.session_state.show_edit_dialog = False
                     st.rerun()
 
-def paperInfoCard(paper: dict):
+@st.dialog("View Taxonomy", width="large")
+def viewTaxonomyDialog(paper: dict, taxonomyProcessor: TaxonomyProcessor):
+    ''' Dialog to view the taxonomy information of a paper '''
+    taxonomy = taxonomyProcessor.getTaxonomyForPaper(paper["id"])
+
+    st.header(f"Taxonomy Information for {paper['title']}")
+    st.write(f"**Summary**: {paper['summary']}")
+    st.write(f"**Authors**: {', '.join(paper['authors'])}")
+                
+    if taxonomy:
+        st.write("**Research Classification**:")
+        st.write(f"- Primary Field: {taxonomy['primaryField']}")
+        st.write(f"- Secondary Fields: {', '.join(taxonomy['secondaryFields'])}")
+        st.write(f"- Subfields: {', '.join(taxonomy['subfields'])}")
+        st.write(f"- Keywords: {', '.join(taxonomy['keywords'])}")
+    else:
+        st.warning("No taxonomy information available for this paper.")
+
+@st.dialog("View Applications", width="large")
+def viewApplicationsDialog(paper: dict, applicationAnalyzer: ApplicationAnalyzer):
+    ''' Dialog to view the applications of a paper '''
+    st.header(f"Applications for {paper['title']}")
+    st.write(f"**Summary**: {paper['summary']}")
+    st.write(f"**Authors**: {', '.join(paper['authors'])}")
+
+    applications = applicationAnalyzer.getApplicationAnalysisForPaper(paper["id"])
+
+    if not applications:
+        st.warning("No application information available for this paper.")
+        return
+    
+    # Display commercial value assessment
+    st.subheader("Commercial Value")
+    st.write(applications["overallCommercialValue"])
+    
+    # Display interdisciplinary potential
+    st.subheader("Interdisciplinary Potential")
+    st.write(applications["interdisciplinaryPotential"])
+    
+    # Display industry applications
+    st.subheader("Industry Applications")
+    industryApps = applications["industryApplications"]
+    
+    if not industryApps:
+        st.info("No specific industry applications identified.")
+    else:
+        for i, industry in enumerate(industryApps):
+            with st.expander(f"{i+1}. {industry['industryName']} (Potential: {industry['commercialPotential'].capitalize()})"):
+                st.write("**Potential Applications:**")
+                for app in industry["potentialApplications"]:
+                    st.write(f"- {app}")
+                
+                if "implementation_challenges" in industry and industry["implementationChallenges"]:
+                    st.write("**Implementation Challenges:**")
+                    for challenge in industry["implementationChallenges"]:
+                        st.write(f"- {challenge}")
+                
+                st.write(f"**Time to Market**: {industry.get('time_to_market', 'Unknown').replace('_', ' ').capitalize()}")
+    
+    # Display academic applications
+    st.subheader("Academic Applications")
+    academicApps = applications["academicApplications"]
+    
+    if not academicApps:
+        st.info("No specific academic applications identified.")
+    else:
+        for i, field in enumerate(academicApps):
+            with st.expander(f"{i+1}. {field.get('fieldName')} (Impact: {field.get('potentialImpact', 'Unkown').capitalize()})"):
+                st.write("**Potential Applications:**")
+                for app in field["potentialApplications"]:
+                    st.write(f"- {app}")
+                
+                st.write("**Research Questions:**")
+                for question in field["researchQuestions"]:
+                    st.write(f"- {question}")
+
+                st.write(f"**Time to Market**: {field.get('time_to_market', 'Unknown').replace('_', ' ').capitalize()}")
+
+@st.dialog("View Fact-Checking", width="large")
+def viewFactCheckingDialog(paper: dict, factChecker: FactChecker):
+    ''' Dialog to view the fact-checking information of a paper '''
+    st.header(f"Fact-Checking Information for {paper['title']}")
+    st.write(f"**Summary**: {paper['summary']}")
+    st.write(f"**Authors**: {', '.join(paper['authors'])}")
+
+    factResults = factChecker.getFactCheckForPaper(paper["id"])
+            
+    if not factResults:
+        st.warning("No fact checking results available for this paper. Process the paper with fact checking enabled.")
+        return
+    
+    # Display overall assessment
+    st.subheader("Overall Assessment")
+    
+    severityCount = factResults.get("severityCount", {"low":0, "medium":0, "high":0})
+    totalIssues = factResults.get("totalIssues", 0)
+    
+    if totalIssues == 0:
+        st.success("No significant factual issues detected in this paper.")
+    else:
+        st.warning(f"Found {totalIssues} potential factual issues: {severityCount['low']} low, {severityCount['medium']} medium, and {severityCount['high']} high severity.")
+        st.write(factResults.get("overallAssessment", ""))
+    
+    # Display issues if any
+    if totalIssues > 0:
+        st.subheader("Detailed Issues")
+        
+        for i, issue in enumerate(factResults["issues"]):
+            with st.expander(f"Issue {i+1}: {issue['claim'][:100]}... (Severity: {issue['severity'].capitalize()})"):
+                st.write(f"**Claim**: {issue['claim']}")
+                st.write(f"**Problem**: {issue['problem']}")
+                st.write(f"**Explanation**: {issue['explanation']}")
+                
+                if 'suggestedCorrection' in issue and issue['suggestedCorrection']:
+                    st.write(f"**Suggested Correction**: {issue['suggestedCorrection']}")
+
+def paperInfoCard(paper: dict, taxonomyProcessor: TaxonomyProcessor, applicationAnalyzer: ApplicationAnalyzer, factChecker: FactChecker):
     ''' Helper function to display a card that contains all paper details and also allows Updating and Deletion '''
     with st.expander(f"**{paper['title']}**"):
             col1, col2 = st.columns(2, vertical_alignment="center")
@@ -107,3 +226,12 @@ def paperInfoCard(paper: dict):
             st.write(f"**Applications**:  \n{', '.join(paper['applications'])}")
             st.write(f"**Limitations**:  \n{', '.join(paper['limitations'])}")
             st.write(f"**Areas of Improvement**:  \n{', '.join(paper['areasOfImprovement'])}")
+
+            col1, col2, col3 = st.columns(3, vertical_alignment="center")
+            if col1.button("View Taxonomy Information", key=paper["id"]+"taxonomy", use_container_width=True):
+                viewTaxonomyDialog(paper, taxonomyProcessor)
+            if col2.button("View Applications", key=paper["id"]+"applications", use_container_width=True):
+                viewApplicationsDialog(paper, applicationAnalyzer)
+            if col3.button("View Fact-Checking Information", key=paper["id"]+"factchecking", use_container_width=True):
+                viewFactCheckingDialog(paper, factChecker)
+            
